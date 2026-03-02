@@ -27,6 +27,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<PatientsPage />} />
           <Route path="/create" element={<CreatePatientPage />} />
+          <Route path="/create/:id" element={<CreatePatientPage />} />
           <Route path="/inactive" element={<InactivePatientsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/patients/:id" element={<PatientDetailPage />} />

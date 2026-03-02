@@ -13,10 +13,63 @@ body { margin: 0; font-family: Arial, sans-serif; background: #f3f6fa; }
 .nav-link.active { background: var(--c4); color: var(--c1); }
 .content { padding: 1rem; }
 
+.patient-form {
+  max-width: 640px;
+  background: var(--white);
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 6px 14px rgba(3, 37, 108, .12);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: .8rem;
+  font-weight: 600;
+  gap: .35rem;
+}
+
+.form-field input {
+  width: 100%;
+}
+
 table { width: 100%; border-collapse: collapse; background: var(--white); }
 th, td { border: 1px solid #dce5ef; padding: .4rem; }
 th { background: var(--c3); color: var(--white); cursor: pointer; }
-input, select, textarea, button { padding: .4rem; margin: .2rem 0; }
+input, select, textarea, button { padding: .5rem; margin: .2rem 0; border: 1px solid #cbd8e6; border-radius: 6px; }
+
+button {
+  background: var(--c4);
+  border: none;
+  color: var(--c1);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.search-bar {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: .75rem;
+}
+
+.search-bar input {
+  width: min(500px, 100%);
+}
+
+.action-buttons {
+  display: flex;
+  gap: .5rem;
+}
+
+.action-buttons a {
+  text-decoration: none;
+  color: var(--c1);
+  background: var(--c4);
+  padding: .45rem .6rem;
+  border-radius: 6px;
+  font-weight: 700;
+}
 
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); display: grid; place-items: center; }
 .modal { background: var(--white); padding: 1rem; width: min(500px, 90vw); border-radius: 8px; }
