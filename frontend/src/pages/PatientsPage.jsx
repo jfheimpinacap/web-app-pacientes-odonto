@@ -10,14 +10,12 @@ const columns = [
   { key: 'national_id', label: 'RUT/ID', sortable: true },
   { key: 'last_prophylactic_date', label: 'Último profiláctico' },
   { key: 'next_appointment_date', label: 'Siguiente cita' },
-  { key: 'status', label: 'Estado', sortable: true },
 ]
 
 export default function PatientsPage() {
   const [patients, setPatients] = useState([])
   const [ordering, setOrdering] = useState('first_name')
   const [editing, setEditing] = useState({})
-  const [feedback, setFeedback] = useState({})
   const [modalPatient, setModalPatient] = useState(null)
   const [modalNotes, setModalNotes] = useState('')
   const [searchText, setSearchText] = useState('')
@@ -46,7 +44,6 @@ export default function PatientsPage() {
   }, [patients, submittedSearch])
 
   const saveField = async (id, field, value) => {
-    setFeedback((prev) => ({ ...prev, [id]: 'Guardando...' }))
     try {
       const { data } = await api.patch(`/patients/${id}/`, { [field]: value })
       if (data.should_move_to_inactive && data.status === 'active') {
@@ -55,11 +52,8 @@ export default function PatientsPage() {
           await api.patch(`/patients/${id}/`, { status: 'inactive' })
         }
       }
-      setFeedback((prev) => ({ ...prev, [id]: 'OK' }))
       fetchPatients()
-    } catch {
-      setFeedback((prev) => ({ ...prev, [id]: 'Error al guardar' }))
-    }
+    } catch {}
   }
 
   return (
@@ -93,33 +87,16 @@ export default function PatientsPage() {
             <tr key={patient.id}>
               {columns.map((column) => (
                 <td key={column.key}>
-                  {column.key === 'status' ? (
-                    <select
-                      value={editing[`${patient.id}-${column.key}`] ?? (patient[column.key] ?? 'active')}
-                      onChange={(e) => {
-                        const value = e.target.value
-                        setEditing((prev) => ({
-                          ...prev,
-                          [`${patient.id}-${column.key}`]: value,
-                        }))
-                        saveField(patient.id, column.key, value)
-                      }}
-                    >
-                      <option value="active">Activo</option>
-                      <option value="inactive">Inactivo</option>
-                    </select>
-                  ) : (
-                    <input
-                      value={editing[`${patient.id}-${column.key}`] ?? (patient[column.key] ?? '')}
-                      onChange={(e) =>
-                        setEditing((prev) => ({
-                          ...prev,
-                          [`${patient.id}-${column.key}`]: e.target.value,
-                        }))
-                      }
-                      onBlur={(e) => saveField(patient.id, column.key, e.target.value)}
-                    />
-                  )}
+                  <input
+                    value={editing[`${patient.id}-${column.key}`] ?? (patient[column.key] ?? '')}
+                    onChange={(e) =>
+                      setEditing((prev) => ({
+                        ...prev,
+                        [`${patient.id}-${column.key}`]: e.target.value,
+                      }))
+                    }
+                    onBlur={(e) => saveField(patient.id, column.key, e.target.value)}
+                  />
                 </td>
               ))}
               <td>
@@ -132,7 +109,22 @@ export default function PatientsPage() {
                   Abrir
                 </button>
               </td>
-              <td>{feedback[patient.id] || '-'}</td>
+              <td>
+                <select
+                  value={editing[`${patient.id}-status`] ?? (patient.status ?? 'active')}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setEditing((prev) => ({
+                      ...prev,
+                      [`${patient.id}-status`]: value,
+                    }))
+                    saveField(patient.id, 'status', value)
+                  }}
+                >
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
+              </td>
               <td>
                 <div className="action-buttons">
                   <Link to={`/create/${patient.id}`}>Editar datos</Link>
