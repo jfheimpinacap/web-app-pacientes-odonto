@@ -11,26 +11,42 @@ body { margin: 0; font-family: Arial, sans-serif; background: #f3f6fa; }
 .sidebar { background: var(--c1); color: var(--white); padding: 1rem; display: flex; flex-direction: column; gap: .75rem; }
 .nav-link { color: var(--white); text-decoration: none; padding: .5rem; border-radius: 6px; }
 .nav-link.active { background: var(--c4); color: var(--c1); }
-.content { padding: 1rem; }
+.content { padding: 1rem; background: var(--white); }
 
 .patient-form {
-  max-width: 640px;
-  background: var(--white);
+  max-width: 760px;
+  width: min(100%, 760px);
+  background: var(--c1);
   border-radius: 10px;
-  padding: 1rem;
+  padding: 1.5rem;
   box-shadow: 0 6px 14px rgba(3, 37, 108, .12);
+  box-sizing: border-box;
+}
+
+.patient-form h2,
+.patient-form p {
+  color: var(--white);
 }
 
 .form-field {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(140px, 180px) 1fr;
+  align-items: center;
   margin-bottom: .8rem;
   font-weight: 600;
-  gap: .35rem;
+  gap: .75rem;
+  color: var(--white);
 }
 
 .form-field input {
   width: 100%;
+  background: var(--c3);
+  border: 1px solid var(--c3);
+  color: var(--white);
+}
+
+.form-field input::placeholder {
+  color: rgba(255, 255, 255, .8);
 }
 
 table { width: 100%; border-collapse: collapse; background: var(--white); }
@@ -41,7 +57,7 @@ input, select, textarea, button { padding: .5rem; margin: .2rem 0; border: 1px s
 button {
   background: var(--c4);
   border: none;
-  color: var(--c1);
+  color: var(--white);
   font-weight: 700;
   cursor: pointer;
 }
@@ -64,7 +80,7 @@ button {
 
 .action-buttons a {
   text-decoration: none;
-  color: var(--c1);
+  color: var(--white);
   background: var(--c4);
   padding: .45rem .6rem;
   border-radius: 6px;
