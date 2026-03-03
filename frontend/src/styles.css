@@ -1,67 +1,124 @@
 :root {
-  --c1: #03256c;
-  --c2: #2541b2;
-  --c3: #1768ac;
-  --c4: #06bee1;
-  --white: #ffffff;
+  --c1: #054A91;
+  --c2: #3E7CB1;
+  --c3: #81A4CD;
+  --c4: #F17300; /* si quieres #06BEE1, cámbialo aquí */
+  --c5: #DBE4EE;
+  --white: #FFFFFF;
 }
 
-body { margin: 0; font-family: Arial, sans-serif; background: #f3f6fa; }
-.layout { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
-.sidebar { background: var(--c1); color: var(--white); padding: 1rem; display: flex; flex-direction: column; gap: .75rem; }
-.nav-link { color: var(--white); text-decoration: none; padding: .5rem; border-radius: 6px; }
-.nav-link.active { background: var(--c4); color: var(--c1); }
-.content { padding: 1rem; background: var(--white); }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f3f6fa;
+}
 
+button, input, select, textarea, a, th, td, h1, h2, h3, label {
+  font-family: inherit;   /* ✅ misma fuente para TODO */
+}
+.layout { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+
+.sidebar {
+  background: var(--c1);
+  color: var(--c5);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+
+.nav-link {
+  color: var(--c5);
+  text-decoration: none;
+  padding: .6rem .7rem;
+  border-radius: 6px;
+  font-weight: 400; /* ✅ normal */
+}
+
+.nav-link.active {
+  background: var(--c4);
+  color: var(--white);
+  font-weight: 400; /* ✅ normal */
+}
+
+/* Contenido */
+.content { padding: 1rem; background: var(--c5); }
+
+/* ---------- FORM CREAR/EDITAR ---------- */
 .patient-form {
   max-width: 760px;
   width: min(100%, 760px);
   background: var(--c1);
   border-radius: 10px;
-  padding: 1.5rem;
+  padding: 1.5rem 2.2rem 1.5rem 1.5rem; /* ✅ más padding a la derecha */
   box-shadow: 0 6px 14px rgba(3, 37, 108, .12);
   box-sizing: border-box;
 }
 
 .patient-form h2,
 .patient-form p {
-  color: var(--white);
+  color: var(--c5);
 }
 
 .form-field {
   display: grid;
-  grid-template-columns: minmax(140px, 180px) 1fr;
+  grid-template-columns: 190px 1fr;      /* ✅ labels con ancho fijo */
   align-items: center;
-  margin-bottom: .8rem;
-  font-weight: 600;
-  gap: .75rem;
-  color: var(--white);
+  margin-bottom: 1rem;
+  font-weight: 700;
+  gap: 1rem;
+  color: var(--c5);
 }
 
 .form-field input {
   width: 100%;
-  background: var(--c3);
-  border: 1px solid var(--c3);
-  color: var(--white);
+  max-width: 520px;      /* ✅ acota el largo hacia la derecha */
+  justify-self: start;   /* ✅ se pega al lado izquierdo del campo */
+  background: var(--c5);
+  border: 1px solid #cbd8e6;
+  color: #0f172a;        /* ✅ texto visible */
 }
 
 .form-field input::placeholder {
-  color: rgba(255, 255, 255, .8);
+  color: rgba(15, 23, 42, .55);
 }
 
-table { width: 100%; border-collapse: collapse; background: var(--white); }
-th, td { border: 1px solid #dce5ef; padding: .4rem; }
-th { background: var(--c3); color: var(--white); cursor: pointer; }
-input, select, textarea, button { padding: .5rem; margin: .2rem 0; border: 1px solid #cbd8e6; border-radius: 6px; }
+/* Botonera del form */
+.form-actions{
+  display:flex;
+  gap:.75rem;
+  margin-top: .5rem;
+}
 
-button {
+button, .action-buttons a {
   background: var(--c4);
   border: none;
   color: var(--white);
   font-weight: 700;
   cursor: pointer;
+  border-radius: 8px;
+  padding: .7rem 1.1rem;
 }
 
+/* ---------- TABLA PACIENTES ---------- */
+table { width: 100%; border-collapse: collapse; background: var(--c5); }
+th, td { border: 1px solid #dce5ef; padding: .5rem; }
+
+th {
+  background: var(--c3);
+  color: var(--white);                  /* ✅ headers blancos */
+  cursor: pointer;
+}
+
+/* inputs generales */
+input, select, textarea {
+  padding: .5rem;
+  margin: .2rem 0;
+  border: 1px solid #cbd8e6;
+  border-radius: 6px;
+}
+
+/* Search bar */
 .search-bar {
   display: flex;
   gap: .5rem;
@@ -69,24 +126,102 @@ button {
   margin-bottom: .75rem;
 }
 
-.search-bar input {
-  width: min(500px, 100%);
-}
+.search-bar input { width: min(500px, 100%); }
 
 .action-buttons {
   display: flex;
   gap: .5rem;
+  flex-wrap: wrap;
 }
 
 .action-buttons a {
   text-decoration: none;
-  color: var(--white);
-  background: var(--c4);
-  padding: .45rem .6rem;
-  border-radius: 6px;
-  font-weight: 700;
+  padding: .55rem .7rem;
+  border-radius: 8px;
+  font-weight: 800;
 }
 
+/* ---------- BUSQUEDA AVANZADA ---------- */
+.advanced-search {
+  background: var(--c1);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: var(--white);
+}
+
+.advanced-search h3 {
+  margin: 0 0 .75rem 0;
+  font-size: 16px;
+}
+
+.advanced-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: .75rem;
+}
+
+.advanced-row .label {
+  font-weight: 700;
+  margin-right: .25rem;
+}
+
+.advanced-row input,
+.advanced-row select {
+  background: var(--white);
+}
+
+/* fila vencida (rosado claro) */
+.row-overdue td {
+  background: #ffd6e7 !important;
+}
+
+/* ---------- MODAL ---------- */
 .modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); display: grid; place-items: center; }
 .modal { background: var(--white); padding: 1rem; width: min(500px, 90vw); border-radius: 8px; }
 .modal-actions { display: flex; gap: .5rem; justify-content: flex-end; }
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.nav-group-btn {
+  background: transparent;
+  border: none;
+  color: var(--c5);
+  text-align: left;
+  padding: .6rem .7rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.nav-group-btn.active {
+  background: var(--c4);
+  color: var(--white);
+}
+
+.nav-submenu {
+  margin-left: .65rem;
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.nav-sublink {
+  color: var(--c5);
+  text-decoration: none;
+  padding: .5rem .65rem;
+  border-radius: 6px;
+  font-weight: 400;
+  opacity: .95;
+}
+
+.nav-sublink.active {
+  background: rgba(255,255,255,.12);
+  color: var(--white);
+}

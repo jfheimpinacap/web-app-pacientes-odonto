@@ -17,6 +17,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
 class PatientSerializer(serializers.ModelSerializer):
     should_move_to_inactive = serializers.BooleanField(read_only=True)
+    last_appointment_status = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
@@ -34,9 +35,14 @@ class PatientSerializer(serializers.ModelSerializer):
             'next_appointment_date',
             'notes',
             'should_move_to_inactive',
+            'last_appointment_status',
             'created_at',
             'updated_at',
         ]
+
+    def get_last_appointment_status(self, obj):
+        appt = obj.appointments.order_by('-date').first()
+        return appt.status if appt else None
 
 
 class PatientDetailSerializer(PatientSerializer):

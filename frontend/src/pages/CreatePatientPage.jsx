@@ -16,8 +16,10 @@ export default function CreatePatientPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const isEditing = Boolean(id)
+
   const [form, setForm] = useState(initial)
   const [message, setMessage] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     const loadPatient = async () => {
@@ -37,23 +39,8 @@ export default function CreatePatientPage() {
         setMessage('No se pudo cargar el paciente')
       }
     }
-
     loadPatient()
   }, [id, isEditing])
-
-  const submit = async (e) => {
-    e.preventDefault()
-    try {
-      if (isEditing) {
-        await api.patch(`/patients/${id}/`, form)
-      } else {
-        await api.post('/patients/', form)
-      }
-      navigate('/')
-    } catch {
-      setMessage(isEditing ? 'Error al actualizar paciente' : 'Error al crear paciente')
-    }
-  }
 
   const labels = {
     first_name: 'Nombre',
@@ -65,9 +52,43 @@ export default function CreatePatientPage() {
     email: 'Email',
   }
 
+  const persist = async () => {
+    setSaving(true)
+    setMessage('')
+    try {
+      if (isEditing) {
+        await api.patch(`/patients/${id}/`, form)
+      } else {
+        await api.post('/patients/', form)
+      }
+      return true
+    } catch {
+      setMessage(isEditing ? 'Error al actualizar paciente' : 'Error al crear paciente')
+      return false
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const onGuardar = async (e) => {
+    e.preventDefault()
+    const ok = await persist()
+    if (ok) navigate('/') // o /pacientes según tu router
+  }
+
+  const onAgregarOtro = async () => {
+    // Solo aplica al crear (no editar)
+    const ok = await persist()
+    if (ok) {
+      setForm(initial)
+      setMessage('Paciente creado. Puedes agregar otro.')
+    }
+  }
+
   return (
-    <form onSubmit={submit} className="patient-form">
+    <form onSubmit={onGuardar} className="patient-form">
       <h2>{isEditing ? 'Editar paciente' : 'Crear paciente'}</h2>
+
       {Object.keys(initial).map((field) => (
         <label key={field} className="form-field">
           {labels[field]}
@@ -78,7 +99,19 @@ export default function CreatePatientPage() {
           />
         </label>
       ))}
-      <button type="submit">Guardar</button>
+
+      <div className="form-actions">
+        <button type="submit" disabled={saving}>
+          {saving ? 'Guardando...' : 'Guardar'}
+        </button>
+
+        {!isEditing && (
+          <button type="button" className="btn-secondary" onClick={onAgregarOtro} disabled={saving}>
+            Agregar otro
+          </button>
+        )}
+      </div>
+
       <p>{message}</p>
     </form>
   )
