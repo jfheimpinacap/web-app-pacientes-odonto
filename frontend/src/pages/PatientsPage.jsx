@@ -18,12 +18,13 @@ function parseISODate(iso) {
   return dt
 }
 
-function todayISO() {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+// ✅ lunes como inicio de semana
+function startOfWeekMonday(dateObj) {
+  const d = toDateOnly(dateObj)
+  const day = d.getDay() // 0=domingo ... 6=sábado
+  const diffToMonday = (day + 6) % 7 // lunes=0, martes=1, ... domingo=6
+  d.setDate(d.getDate() - diffToMonday)
+  return d
 }
 
 function isCompleteISODate(v) {
@@ -53,12 +54,11 @@ export default function PatientsPage() {
   const [rangeFrom, setRangeFrom] = useState('')
   const [rangeTo, setRangeTo] = useState('')
 
-  // ---- Flujo cambio “Siguiente cita” ----
-  // step: null | 'reason' | 'attended' | 'newdate'
-  const [step, setStep] = useState(null)
+  // ---- Modal motivo de cambio (único modal del flujo) ----
+  const [reasonOpen, setReasonOpen] = useState(false)
+  const [reason, setReason] = useState('patient_change')
   const [pending, setPending] = useState(null)
   // pending = { patientId, oldDate, newDate, oldStatus }
-  const [reason, setReason] = useState('patient_change')
 
   const fetchPatients = async () => {
     const params = { ordering, status: statusView }
@@ -86,38 +86,15 @@ export default function PatientsPage() {
     return data
   }
 
-  const saveField = async (id, field, value) => {
-    try {
-      const payload = { [field]: value === '' ? null : value }
-      const data = await patchPatient(id, payload)
-
-      if (data.should_move_to_inactive && data.status === 'active') {
-        const decision = window.confirm('¿Mover a inactivos?')
-        if (decision) await patchPatient(id, { status: 'inactive' })
-      }
-
-      setEditing((prev) => {
-        const copy = { ...prev }
-        delete copy[`${id}-${field}`]
-        return copy
-      })
-
-      fetchPatients()
-    } catch {}
-  }
-
-  // ✅ historial con motivo (requiere backend con Appointment.reason)
   const createHistory = async (patientId, dateStr, status, reasonValue) => {
     if (!dateStr) return
     try {
       await api.post(`/patients/${patientId}/appointments/`, {
         date: dateStr,
-        status,         // arrived | not_arrived | canceled
-        reason: reasonValue, // patient_change | doctor_change | patient_cancel
+        status,
+        reason: reasonValue,
       })
     } catch (e) {
-      // si tu backend aún no tiene "reason", esto dará 400.
-      // En ese caso, comenta la línea reason o implementa el cambio backend del punto 2.
       console.error(e)
     }
   }
@@ -126,7 +103,9 @@ export default function PatientsPage() {
 
   // -------- filtros ----------
   const filteredPatients = useMemo(() => {
-    let list = patients
+    let list = patients.filter((p) =>
+      statusView === 'inactive' ? p.status === 'inactive' : p.status === 'active'
+    )
 
     const term = submittedSearch.trim().toLowerCase()
     if (term) {
@@ -141,15 +120,36 @@ export default function PatientsPage() {
     const today = toDateOnly(new Date())
     const nextDateOf = (p) => parseISODate(p.next_appointment_date)
 
-    if (advMode === 'next_week' || advMode === 'next_month') {
-      const days = advMode === 'next_week' ? 7 : 30
-      const end = toDateOnly(new Date(today))
-      end.setDate(end.getDate() + days)
+    // ✅ Próxima semana = lunes..domingo de la semana siguiente
+    if (advMode === 'next_week') {
+      const startThisWeek = startOfWeekMonday(today)
+      const startNextWeek = toDateOnly(new Date(startThisWeek))
+      startNextWeek.setDate(startNextWeek.getDate() + 7)
+
+      const endNextWeek = toDateOnly(new Date(startNextWeek))
+      endNextWeek.setDate(endNextWeek.getDate() + 6)
 
       list = list.filter((p) => {
         const dt = nextDateOf(p)
         if (!dt) return false
-        return dt >= today && dt <= end
+        return dt >= startNextWeek && dt <= endNextWeek
+      })
+    }
+
+    // ✅ Próximo mes = todo el mes calendario siguiente
+    if (advMode === 'next_month') {
+      const y = today.getFullYear()
+      const m = today.getMonth() // 0-index
+      const startNextMonth = new Date(y, m + 1, 1)
+      startNextMonth.setHours(0, 0, 0, 0)
+
+      const endNextMonth = new Date(y, m + 2, 0) // último día del próximo mes
+      endNextMonth.setHours(0, 0, 0, 0)
+
+      list = list.filter((p) => {
+        const dt = nextDateOf(p)
+        if (!dt) return false
+        return dt >= startNextMonth && dt <= endNextMonth
       })
     }
 
@@ -200,7 +200,7 @@ export default function PatientsPage() {
     }
 
     return list
-  }, [patients, submittedSearch, advMode, rangeFrom, rangeTo])
+  }, [patients, submittedSearch, advMode, rangeFrom, rangeTo, statusView])
 
   const isOverdue = (patient) => {
     const today = toDateOnly(new Date())
@@ -216,63 +216,63 @@ export default function PatientsPage() {
     return t
   }
 
-  // ✅ Disparar flujo INMEDIATO al elegir/borrar fecha
   const startNextChangeFlow = (patient, newDate) => {
-    if (step) return // ya hay un flujo abierto
+    if (reasonOpen) return
     if (!isCompleteISODate(newDate)) return
 
     const oldDate = patient.next_appointment_date ?? ''
     if (newDate === oldDate) return
 
-    setReason('patient_change')
+    setReason(newDate === '' ? 'patient_cancel' : 'patient_change')
+
     setPending({
       patientId: patient.id,
       oldDate,
       newDate,
-      oldStatus: patient.status, // 'active' | 'inactive'
+      oldStatus: patient.status,
     })
-    setStep('reason')
+
+    setReasonOpen(true)
   }
 
-  // ✅ aplicar cambio según el flujo
-  const applyChange = async ({ attended }) => {
+  const cancelReasonFlow = () => {
+    if (pending) {
+      setEditing((prev) => ({
+        ...prev,
+        [`${pending.patientId}-next_appointment_date`]: pending.oldDate || '',
+      }))
+    }
+    setPending(null)
+    setReasonOpen(false)
+  }
+
+  const applyReasonFlow = async () => {
     const ctx = pending
     if (!ctx) return
 
-    const logDate = ctx.oldDate || todayISO() // si no hay oldDate, dejamos hoy como referencia
+    try {
+      const hasOld = Boolean(ctx.oldDate)
 
-    // 1) si motivo es cancelación: fecha queda vacía
-    if (reason === 'patient_cancel') {
-      await createHistory(ctx.patientId, logDate, 'canceled', reason)
-      await patchPatient(ctx.patientId, { next_appointment_date: null })
-      // NO reactivar si cancela
-      setEditing((prev) => ({ ...prev, [`${ctx.patientId}-next_appointment_date`]: '' }))
-      setStep(null)
+      if (reason === 'patient_cancel') {
+        if (hasOld) await createHistory(ctx.patientId, ctx.oldDate, 'canceled', reason)
+        await patchPatient(ctx.patientId, { next_appointment_date: null })
+        setEditing((prev) => ({ ...prev, [`${ctx.patientId}-next_appointment_date`]: '' }))
+      } else {
+        if (hasOld) await createHistory(ctx.patientId, ctx.oldDate, 'not_arrived', reason)
+
+        const payload = { next_appointment_date: ctx.newDate ? ctx.newDate : null }
+        if (ctx.oldStatus === 'inactive' && ctx.newDate) payload.status = 'active'
+        await patchPatient(ctx.patientId, payload)
+      }
+
+      setReasonOpen(false)
       setPending(null)
       fetchPatients()
-      return
+    } catch (e) {
+      console.error(e)
+      setReasonOpen(false)
+      setPending(null)
     }
-
-    // 2) Reprogramación / cambio: registrar historial con arrived/not_arrived
-    await createHistory(ctx.patientId, logDate, attended ? 'arrived' : 'not_arrived', reason)
-
-    // 3) Si asistió: último profiláctico = hoy
-    const payload = {}
-    if (attended) payload.last_prophylactic_date = todayISO()
-
-    // 4) Si el usuario dejó la fecha vacía, queda pendiente
-    payload.next_appointment_date = ctx.newDate ? ctx.newDate : null
-
-    // 5) Si estaba inactivo y se asigna una fecha nueva (no cancel), reactivar
-    if (ctx.oldStatus === 'inactive' && ctx.newDate) {
-      payload.status = 'active'
-    }
-
-    await patchPatient(ctx.patientId, payload)
-
-    setStep(null)
-    setPending(null)
-    fetchPatients()
   }
 
   const ReasonModal = ({ open }) => {
@@ -281,6 +281,7 @@ export default function PatientsPage() {
       <div className="modal-backdrop">
         <div className="modal">
           <h3 style={{ marginTop: 0 }}>Motivo de cambio de fecha</h3>
+
           <select value={reason} onChange={(e) => setReason(e.target.value)} style={{ width: '100%' }}>
             {REASONS.map((r) => (
               <option key={r.value} value={r.value}>{r.label}</option>
@@ -288,49 +289,8 @@ export default function PatientsPage() {
           </select>
 
           <div className="modal-actions" style={{ marginTop: '.75rem' }}>
-            <button
-              type="button"
-              onClick={() => {
-                // cancelar = volver al valor anterior en UI
-                if (pending) {
-                  setEditing((prev) => ({ ...prev, [`${pending.patientId}-next_appointment_date`]: pending.oldDate || '' }))
-                }
-                setStep(null)
-                setPending(null)
-              }}
-            >
-              Cancelar
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                // si cancela, aplicamos directo (sin preguntar asistencia)
-                if (reason === 'patient_cancel') {
-                  applyChange({ attended: false })
-                } else {
-                  setStep('attended')
-                }
-              }}
-            >
-              Continuar
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  const ConfirmModal = ({ open, title, message, yesText = 'Sí', noText = 'No', onYes, onNo }) => {
-    if (!open) return null
-    return (
-      <div className="modal-backdrop">
-        <div className="modal">
-          <h3 style={{ marginTop: 0 }}>{title}</h3>
-          <p>{message}</p>
-          <div className="modal-actions">
-            <button type="button" onClick={onNo}>{noText}</button>
-            <button type="button" onClick={onYes}>{yesText}</button>
+            <button type="button" onClick={cancelReasonFlow}>Cancelar</button>
+            <button type="button" onClick={applyReasonFlow}>Guardar</button>
           </div>
         </div>
       </div>
@@ -339,9 +299,8 @@ export default function PatientsPage() {
 
   return (
     <section>
-      <h2>Pacientes {statusView === 'inactive' ? '(Inactivos)' : ''}</h2>
+     {/* <h3>Pacientes {statusView === 'inactive' ? '(Inactivos)' : ''}</h3> */}
 
-      {/* Buscador */}
       <div className="search-bar">
         <input
           placeholder="Buscar por nombre, apellido o RUT/ID"
@@ -354,17 +313,12 @@ export default function PatientsPage() {
             }
           }}
         />
-
-        <button type="button" onClick={runSearch}>
-          Buscar
-        </button>
-
+        <button type="button" onClick={runSearch}>Buscar</button>
         <button type="button" onClick={toggleStatusView}>
           {statusView === 'inactive' ? 'Ver activos' : 'Ver inactivos'}
         </button>
       </div>
 
-      {/* Búsqueda avanzada */}
       <div className="advanced-search">
         <h3>Búsqueda avanzada (por Siguiente cita)</h3>
 
@@ -401,31 +355,17 @@ export default function PatientsPage() {
         )}
       </div>
 
-      {/* Tabla */}
       <div className="table-scroll">
         <table>
           <thead>
             <tr>
-              <th onClick={() => toggleOrdering('first_name')}>
-                Nombre {sortedIndicator === 'first_name' ? '↕' : ''}
-              </th>
-              <th onClick={() => toggleOrdering('last_name')}>
-                Apellido {sortedIndicator === 'last_name' ? '↕' : ''}
-              </th>
-
+              <th onClick={() => toggleOrdering('first_name')}>Nombre {sortedIndicator === 'first_name' ? '↕' : ''}</th>
+              <th onClick={() => toggleOrdering('last_name')}>Apellido {sortedIndicator === 'last_name' ? '↕' : ''}</th>
               <th className="table-center">Edad</th>
-
-              <th onClick={() => toggleOrdering('national_id')}>
-                RUT/ID {sortedIndicator === 'national_id' ? '↕' : ''}
-              </th>
-
-              <th onClick={() => toggleOrdering('status')} className="table-center">
-                Estado {sortedIndicator === 'status' ? '↕' : ''}
-              </th>
-
+              <th onClick={() => toggleOrdering('national_id')}>RUT/ID {sortedIndicator === 'national_id' ? '↕' : ''}</th>
+              <th onClick={() => toggleOrdering('status')} className="table-center">Estado {sortedIndicator === 'status' ? '↕' : ''}</th>
               <th className="table-center">Último profiláctico</th>
               <th className="table-center">Siguiente cita</th>
-
               <th className="table-center notes-col">Notas</th>
               <th className="table-center actions-col">Acciones</th>
             </tr>
@@ -439,10 +379,7 @@ export default function PatientsPage() {
               const notesPreview = previewText(patient.notes)
 
               return (
-                <tr
-                  key={patient.id}
-                  className={showOverdueHighlight && isOverdue(patient) ? 'row-overdue' : ''}
-                >
+                <tr key={patient.id} className={showOverdueHighlight && isOverdue(patient) ? 'row-overdue' : ''}>
                   <td>{patient.first_name}</td>
                   <td>{patient.last_name}</td>
                   <td className="table-center">{patient.age ?? ''}</td>
@@ -454,7 +391,7 @@ export default function PatientsPage() {
                       onChange={(e) => {
                         const value = e.target.value
                         setEditing((prev) => ({ ...prev, [`${patient.id}-status`]: value }))
-                        saveField(patient.id, 'status', value)
+                        patchPatient(patient.id, { status: value }).then(fetchPatients)
                       }}
                     >
                       <option value="active">Activo</option>
@@ -465,21 +402,17 @@ export default function PatientsPage() {
                   <td className="table-center">
                     <input
                       type="date"
-                      value={
-                        editing[`${patient.id}-last_prophylactic_date`]
-                        ?? (patient.last_prophylactic_date ?? '')
-                      }
+                      value={editing[`${patient.id}-last_prophylactic_date`] ?? (patient.last_prophylactic_date ?? '')}
                       onChange={(e) =>
                         setEditing((prev) => ({
                           ...prev,
                           [`${patient.id}-last_prophylactic_date`]: e.target.value,
                         }))
                       }
-                      onBlur={(e) => saveField(patient.id, 'last_prophylactic_date', e.target.value)}
+                      onBlur={(e) => patchPatient(patient.id, { last_prophylactic_date: e.target.value || null }).then(fetchPatients)}
                     />
                   </td>
 
-                  {/* ✅ Cambiado: flujo se dispara en onChange */}
                   <td className="table-center">
                     <input
                       type="date"
@@ -524,45 +457,7 @@ export default function PatientsPage() {
         </table>
       </div>
 
-      {/* Paso 1: Motivo */}
-      <ReasonModal open={step === 'reason'} />
-
-      {/* Paso 2: Asistencia */}
-      <ConfirmModal
-        open={step === 'attended'}
-        title="Confirmación"
-        message="¿Paciente llegó a cita?"
-        yesText="Sí"
-        noText="No"
-        onYes={async () => {
-          await applyChange({ attended: true })
-        }}
-        onNo={async () => {
-          setStep('newdate')
-        }}
-      />
-
-      {/* Paso 3: ¿Ingresar nueva fecha? (solo si NO llegó) */}
-      <ConfirmModal
-        open={step === 'newdate'}
-        title="Confirmación"
-        message="¿Ingresar nueva fecha?"
-        yesText="Sí"
-        noText="No"
-        onYes={async () => {
-          await applyChange({ attended: false })
-        }}
-        onNo={async () => {
-          // dejar pendiente
-          if (pending) {
-            await patchPatient(pending.patientId, { next_appointment_date: null })
-            setEditing((prev) => ({ ...prev, [`${pending.patientId}-next_appointment_date`]: '' }))
-          }
-          setStep(null)
-          setPending(null)
-          fetchPatients()
-        }}
-      />
+      <ReasonModal open={reasonOpen} />
 
       <NotesModal
         open={Boolean(modalPatient)}
@@ -571,8 +466,9 @@ export default function PatientsPage() {
         onSave={async (value, persist) => {
           setModalNotes(value)
           if (persist && modalPatient) {
-            await saveField(modalPatient.id, 'notes', value)
+            await patchPatient(modalPatient.id, { notes: value })
             setModalPatient(null)
+            fetchPatients()
           }
         }}
       />

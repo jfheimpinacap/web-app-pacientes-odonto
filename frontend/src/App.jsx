@@ -1,14 +1,23 @@
 import { NavLink, Route, Routes, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+
 import PatientsPage from './pages/PatientsPage'
 import CreatePatientPage from './pages/CreatePatientPage'
 import ReportsHistoryPage from './pages/ReportsHistoryPage'
 import ReportsTransferPage from './pages/ReportsTransferPage'
 import PatientDetailPage from './pages/PatientDetailPage'
 
+// ✅ Iconos desde frontend/src/icons/
+import icoOdonto from './icons/diente_corona_color.svg'
+import icoPacientes from './icons/calendar-svgrepo-com.svg'
+import icoCrear from './icons/diente_agregar_px.svg'
+import icoInformes from './icons/documents-svgrepo-com.svg'   
+import icoHistorial from './icons/tooth-magnify-svgrepo-com.svg'
+import icoTransfer from './icons/mobile-svgrepo-com.svg'
+
 const links = [
-  { to: '/', label: 'Pacientes' },
-  { to: '/create', label: 'Crear paciente' },
+  { to: '/', label: 'Pacientes', icon: icoPacientes },
+  { to: '/create', label: 'Crear paciente', icon: icoCrear },
 ]
 
 export default function App() {
@@ -24,11 +33,16 @@ export default function App() {
   return (
     <div className="layout">
       <aside className="sidebar">
-        <h1>Odonto</h1>
+        {/* Título con icono casi pegado y un poco más grande que el texto */}
+        <h1 className="sidebar-title">
+          <span className="sidebar-title-text">Odonto</span>
+          <img className="sidebar-title-icon" src={icoOdonto} alt="Odonto" />
+        </h1>
 
         {links.map((link) => (
           <NavLink key={link.to} to={link.to} end={link.to === '/'} className="nav-link">
-            {link.label}
+            <img className="nav-icon-img" src={link.icon} alt="" aria-hidden="true" />
+            <span>{link.label}</span>
           </NavLink>
         ))}
 
@@ -39,16 +53,20 @@ export default function App() {
             className={`nav-group-btn ${reportsActive ? 'active' : ''}`}
             onClick={() => setReportsOpen((v) => !v)}
           >
-            Informes {reportsOpen ? '▾' : '▸'}
+            <img className="nav-icon-img" src={icoInformes} alt="" aria-hidden="true" />
+            <span>Informes {reportsOpen ? '▾' : '▸'}</span>
           </button>
 
           {reportsOpen && (
             <div className="nav-submenu">
               <NavLink to="/reports/history" className="nav-sublink">
-                Historial paciente
+                <img className="nav-icon-img" src={icoHistorial} alt="" aria-hidden="true" />
+                <span>Historial paciente</span>
               </NavLink>
+
               <NavLink to="/reports/transfer" className="nav-sublink">
-                Traspaso de datos
+                <img className="nav-icon-img" src={icoTransfer} alt="" aria-hidden="true" />
+                <span>Traspaso de datos</span>
               </NavLink>
             </div>
           )}
@@ -61,7 +79,6 @@ export default function App() {
           <Route path="/create" element={<CreatePatientPage />} />
           <Route path="/create/:id" element={<CreatePatientPage />} />
 
-          {/* ✅ nuevas rutas */}
           <Route path="/reports/history" element={<ReportsHistoryPage />} />
           <Route path="/reports/transfer" element={<ReportsTransferPage />} />
 
