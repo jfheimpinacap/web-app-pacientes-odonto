@@ -14,175 +14,56 @@ body {
 }
 
 button, input, select, textarea, a, th, td, h1, h2, h3, label {
-  font-family: inherit;   /* ✅ misma fuente para TODO */
+  font-family: inherit;
 }
-.layout { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
 
+/* ---------------- Layout + Sidebar fijo ---------------- */
+.layout {
+  min-height: 100vh;
+}
+
+/* ✅ Sidebar fijo */
 .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 230px;
+  height: 100vh;
+  overflow-y: auto;
   background: var(--c1);
   color: var(--c5);
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: .75rem;
+  box-sizing: border-box;
 }
 
+/* ✅ Contenido separado del sidebar */
+.content {
+  margin-left: 230px;
+  padding: 1rem;
+  background: var(--c5);
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* ---------------- Sidebar links ---------------- */
 .nav-link {
   color: var(--c5);
   text-decoration: none;
   padding: .6rem .7rem;
   border-radius: 6px;
-  font-weight: 400; /* ✅ normal */
+  font-weight: 400;
 }
 
 .nav-link.active {
   background: var(--c4);
   color: var(--white);
-  font-weight: 400; /* ✅ normal */
+  font-weight: 400;
 }
 
-/* Contenido */
-.content { padding: 1rem; background: var(--c5); }
-
-/* ---------- FORM CREAR/EDITAR ---------- */
-.patient-form {
-  max-width: 760px;
-  width: min(100%, 760px);
-  background: var(--c1);
-  border-radius: 10px;
-  padding: 1.5rem 2.2rem 1.5rem 1.5rem; /* ✅ más padding a la derecha */
-  box-shadow: 0 6px 14px rgba(3, 37, 108, .12);
-  box-sizing: border-box;
-}
-
-.patient-form h2,
-.patient-form p {
-  color: var(--c5);
-}
-
-.form-field {
-  display: grid;
-  grid-template-columns: 190px 1fr;      /* ✅ labels con ancho fijo */
-  align-items: center;
-  margin-bottom: 1rem;
-  font-weight: 700;
-  gap: 1rem;
-  color: var(--c5);
-}
-
-.form-field input {
-  width: 100%;
-  max-width: 520px;      /* ✅ acota el largo hacia la derecha */
-  justify-self: start;   /* ✅ se pega al lado izquierdo del campo */
-  background: var(--c5);
-  border: 1px solid #cbd8e6;
-  color: #0f172a;        /* ✅ texto visible */
-}
-
-.form-field input::placeholder {
-  color: rgba(15, 23, 42, .55);
-}
-
-/* Botonera del form */
-.form-actions{
-  display:flex;
-  gap:.75rem;
-  margin-top: .5rem;
-}
-
-button, .action-buttons a {
-  background: var(--c4);
-  border: none;
-  color: var(--white);
-  font-weight: 700;
-  cursor: pointer;
-  border-radius: 8px;
-  padding: .7rem 1.1rem;
-}
-
-/* ---------- TABLA PACIENTES ---------- */
-table { width: 100%; border-collapse: collapse; background: var(--c5); }
-th, td { border: 1px solid #dce5ef; padding: .5rem; }
-
-th {
-  background: var(--c3);
-  color: var(--white);                  /* ✅ headers blancos */
-  cursor: pointer;
-}
-
-/* inputs generales */
-input, select, textarea {
-  padding: .5rem;
-  margin: .2rem 0;
-  border: 1px solid #cbd8e6;
-  border-radius: 6px;
-}
-
-/* Search bar */
-.search-bar {
-  display: flex;
-  gap: .5rem;
-  align-items: center;
-  margin-bottom: .75rem;
-}
-
-.search-bar input { width: min(500px, 100%); }
-
-.action-buttons {
-  display: flex;
-  gap: .5rem;
-  flex-wrap: wrap;
-}
-
-.action-buttons a {
-  text-decoration: none;
-  padding: .55rem .7rem;
-  border-radius: 8px;
-  font-weight: 800;
-}
-
-/* ---------- BUSQUEDA AVANZADA ---------- */
-.advanced-search {
-  background: var(--c1);
-  border-radius: 10px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  color: var(--white);
-}
-
-.advanced-search h3 {
-  margin: 0 0 .75rem 0;
-  font-size: 16px;
-}
-
-.advanced-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .5rem;
-  align-items: center;
-  margin-bottom: .75rem;
-}
-
-.advanced-row .label {
-  font-weight: 700;
-  margin-right: .25rem;
-}
-
-.advanced-row input,
-.advanced-row select {
-  background: var(--white);
-}
-
-/* fila vencida (rosado claro) */
-.row-overdue td {
-  background: #ffd6e7 !important;
-}
-
-/* ---------- MODAL ---------- */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); display: grid; place-items: center; }
-.modal { background: var(--white); padding: 1rem; width: min(500px, 90vw); border-radius: 8px; }
-.modal-actions { display: flex; gap: .5rem; justify-content: flex-end; }
-
+/* Submenu Informes */
 .nav-group {
   display: flex;
   flex-direction: column;
@@ -224,4 +105,265 @@ input, select, textarea {
 .nav-sublink.active {
   background: rgba(255,255,255,.12);
   color: var(--white);
+}
+
+/* ---------------- Form Crear/Editar ---------------- */
+.patient-form {
+  max-width: 760px;
+  width: min(100%, 760px);
+  background: var(--c1);
+  border-radius: 10px;
+  padding: 1.5rem 2.2rem 1.5rem 1.5rem;
+  box-shadow: 0 6px 14px rgba(3, 37, 108, .12);
+  box-sizing: border-box;
+}
+
+.patient-form h2,
+.patient-form p {
+  color: var(--c5);
+}
+
+.form-field {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  align-items: center;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  gap: 1rem;
+  color: var(--c5);
+}
+
+.form-field input {
+  width: 100%;
+  max-width: 520px;
+  justify-self: start;
+  background: var(--c5);
+  border: 1px solid #cbd8e6;
+  color: #0f172a;
+  box-sizing: border-box;
+}
+
+.form-field input::placeholder {
+  color: rgba(15, 23, 42, .55);
+}
+
+.form-actions {
+  display: flex;
+  gap: .75rem;
+  margin-top: .5rem;
+}
+
+/* ---------------- Botones / Acciones ---------------- */
+button, .action-buttons a {
+  background: var(--c4);
+  border: none;
+  color: var(--white);
+  font-weight: 400;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: .55rem .9rem;
+}
+
+/* links tipo botón */
+.action-buttons a {
+  text-decoration: none;
+  display: inline-block;
+}
+
+/* Botón pequeño (para "Ver" en notas) */
+.btn-small {
+  padding: .28rem .55rem;
+  border-radius: 7px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* ---------------- Search ---------------- */
+.search-bar {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: .75rem;
+}
+
+.search-bar input { width: min(500px, 100%); }
+
+/* ---------------- Busqueda avanzada ---------------- */
+.advanced-search {
+  background: var(--c1);
+  border-radius: 10px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: var(--white);
+}
+
+.advanced-search h3 {
+  margin: 0 0 .75rem 0;
+  font-size: 16px;
+}
+
+.advanced-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+  margin-bottom: .75rem;
+}
+
+.advanced-row .label {
+  font-weight: 700;
+  margin-right: .25rem;
+}
+
+.advanced-row input,
+.advanced-row select {
+  background: var(--white);
+}
+
+/* ---------------- Tabla (compacta + zebra + hover) ---------------- */
+.table-scroll {
+  max-height: calc(100vh - 320px);
+  overflow: auto;
+  border-radius: 10px;
+}
+
+/* Tabla base */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--c5);
+}
+
+/* Header sticky */
+.table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+th, td {
+  border: 1px solid #dce5ef;
+  padding: .35rem .45rem;
+  line-height: 1.1;
+}
+
+th {
+  background: var(--c3);
+  color: var(--white);
+  cursor: pointer;
+}
+
+/* zebra */
+tbody tr:nth-child(even) td {
+  background: #f7fafc;
+}
+
+/* hover */
+tbody tr:hover td {
+  background: #eef6ff;
+}
+
+/* fila vencida (rosado claro) */
+.row-overdue td {
+  background: #ffd6e7 !important;
+}
+
+/* inputs generales */
+input, select, textarea {
+  padding: .5rem;
+  margin: .2rem 0;
+  border: 1px solid #cbd8e6;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+
+/* ✅ Centrar columnas específicas */
+.table-center {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.table-center input,
+.table-center select,
+.table-center button,
+.table-center a,
+.table-center .note-cell {
+  margin: 0 auto;
+}
+
+/* ✅ Columna Acciones ajustada al ancho de botones */
+th.actions-col, td.actions-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* ✅ Botones de acciones centrados y con separación */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: nowrap;
+}
+
+/* ✅ Columna Notas más ancha */
+th.notes-col, td.notes-col {
+  min-width: 300px;
+}
+
+/* Contenido de celda Notas: preview + botón */
+.note-cell {
+  display: flex;
+  justify-content: center;   /* centra el grupo dentro de la celda */
+  align-items: center;
+  gap: .6rem;
+}
+
+.note-preview {
+  max-width: 230px;          /* ancho del texto visible */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  opacity: .8;
+  color: #0f172a;
+}
+
+/* ---------- MODAL ---------- */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  display: grid;
+  place-items: center;
+  z-index: 9999;              /* ✅ por encima de tabla sticky */
+}
+
+.modal {
+  position: relative;
+  z-index: 10000;             /* ✅ por encima del backdrop */
+  background: var(--white);
+  padding: 1rem;
+  width: min(500px, 90vw);
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.modal-actions {
+  display: flex;
+  gap: .5rem;
+  justify-content: flex-end;
+}
+
+/* textarea grande dentro del modal */
+.modal textarea {
+  width: 100%;
+  min-height: 220px;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+/* Historial: resaltar cancelados */
+.row-canceled td{
+  background: #ffe1e1 !important; /* rojo suave */
 }

@@ -52,9 +52,17 @@ class Appointment(TimeStampedModel):
         NOT_ARRIVED = 'not_arrived', 'No llegó'
         CANCELED = 'canceled', 'Canceló'
 
+    class Reason(models.TextChoices):
+        PATIENT_CHANGE = 'patient_change', 'Paciente modifica fecha de cita'
+        DOCTOR_CHANGE = 'doctor_change', 'Doctor modifica fecha de cita'
+        PATIENT_CANCEL = 'patient_cancel', 'Paciente cancela'
+
     patient = models.ForeignKey(Patient, related_name='appointments', on_delete=models.PROTECT)
     date = models.DateField()
     status = models.CharField(max_length=20, choices=Status.choices)
+
+    # ✅ Nuevo: motivo de cambio (opcional)
+    reason = models.CharField(max_length=30, choices=Reason.choices, blank=True, null=True)
 
     class Meta:
         ordering = ['-date', '-created_at']

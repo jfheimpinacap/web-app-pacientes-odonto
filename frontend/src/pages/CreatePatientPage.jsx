@@ -27,15 +27,16 @@ export default function CreatePatientPage() {
       try {
         const { data } = await api.get(`/patients/${id}/`)
         setForm({
-          first_name: data.first_name || '',
-          last_name: data.last_name || '',
-          age: data.age || '',
-          national_id: data.national_id || '',
-          address: data.address || '',
-          phone: data.phone || '',
-          email: data.email || '',
+          first_name: data.first_name ?? '',
+          last_name: data.last_name ?? '',
+          age: data.age ?? '',
+          national_id: data.national_id ?? '',
+          address: data.address ?? '',
+          phone: data.phone ?? '',
+          email: data.email ?? '',
         })
-      } catch {
+      } catch (err) {
+        console.error(err)
         setMessage('No se pudo cargar el paciente')
       }
     }
@@ -52,18 +53,52 @@ export default function CreatePatientPage() {
     email: 'Email',
   }
 
+  const toPayload = () => {
+    const ageNum = form.age === '' ? null : Number(form.age)
+
+    return {
+      first_name: String(form.first_name || '').trim(),
+      last_name: String(form.last_name || '').trim(),
+      age: Number.isFinite(ageNum) ? ageNum : null,
+      national_id: String(form.national_id || '').trim(),
+      address: String(form.address || '').trim(),
+      phone: String(form.phone || '').trim(),
+      // ✅ importante: si viene vacío, mandar null
+      email: String(form.email || '').trim() || null,
+    }
+  }
+
+  const formatBackendError = (err, fallback) => {
+    const data = err?.response?.data
+    if (!data) return fallback
+
+    // DRF suele mandar {field: ["msg"]} o {detail: "..."}
+    if (typeof data === 'string') return data
+    if (data.detail) return String(data.detail)
+
+    const parts = Object.entries(data).map(([k, v]) => {
+      if (Array.isArray(v)) return `${k}: ${v.join(', ')}`
+      if (typeof v === 'object' && v !== null) return `${k}: ${JSON.stringify(v)}`
+      return `${k}: ${String(v)}`
+    })
+    return parts.join(' | ')
+  }
+
   const persist = async () => {
     setSaving(true)
     setMessage('')
+    const payload = toPayload()
+
     try {
       if (isEditing) {
-        await api.patch(`/patients/${id}/`, form)
+        await api.patch(`/patients/${id}/`, payload)
       } else {
-        await api.post('/patients/', form)
+        await api.post('/patients/', payload)
       }
       return true
-    } catch {
-      setMessage(isEditing ? 'Error al actualizar paciente' : 'Error al crear paciente')
+    } catch (err) {
+      console.error(err)
+      setMessage(formatBackendError(err, isEditing ? 'Error al actualizar paciente' : 'Error al crear paciente'))
       return false
     } finally {
       setSaving(false)
@@ -73,11 +108,10 @@ export default function CreatePatientPage() {
   const onGuardar = async (e) => {
     e.preventDefault()
     const ok = await persist()
-    if (ok) navigate('/') // o /pacientes según tu router
+    if (ok) navigate('/') // o /pacientes según tus rutas
   }
 
   const onAgregarOtro = async () => {
-    // Solo aplica al crear (no editar)
     const ok = await persist()
     if (ok) {
       setForm(initial)
@@ -93,6 +127,7 @@ export default function CreatePatientPage() {
         <label key={field} className="form-field">
           {labels[field]}
           <input
+            type={field === 'age' ? 'number' : field === 'email' ? 'email' : 'text'}
             value={form[field]}
             onChange={(e) => setForm({ ...form, [field]: e.target.value })}
             required={field !== 'email'}
@@ -106,13 +141,13 @@ export default function CreatePatientPage() {
         </button>
 
         {!isEditing && (
-          <button type="button" className="btn-secondary" onClick={onAgregarOtro} disabled={saving}>
+          <button type="button" onClick={onAgregarOtro} disabled={saving}>
             Agregar otro
           </button>
         )}
       </div>
 
-      <p>{message}</p>
+      {message && <p>{message}</p>}
     </form>
   )
 }

@@ -12,12 +12,13 @@ class AuditLogSerializer(serializers.ModelSerializer):
 class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
-        fields = ['id', 'date', 'status', 'created_at']
+        fields = ['id', 'date', 'status', 'reason', 'created_at']
 
 
 class PatientSerializer(serializers.ModelSerializer):
     should_move_to_inactive = serializers.BooleanField(read_only=True)
     last_appointment_status = serializers.SerializerMethodField()
+    last_appointment_reason = serializers.SerializerMethodField()
 
     class Meta:
         model = Patient
@@ -36,6 +37,7 @@ class PatientSerializer(serializers.ModelSerializer):
             'notes',
             'should_move_to_inactive',
             'last_appointment_status',
+            'last_appointment_reason',
             'created_at',
             'updated_at',
         ]
@@ -43,6 +45,10 @@ class PatientSerializer(serializers.ModelSerializer):
     def get_last_appointment_status(self, obj):
         appt = obj.appointments.order_by('-date').first()
         return appt.status if appt else None
+
+    def get_last_appointment_reason(self, obj):
+        appt = obj.appointments.order_by('-date').first()
+        return appt.reason if appt else None
 
 
 class PatientDetailSerializer(PatientSerializer):
